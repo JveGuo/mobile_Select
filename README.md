@@ -80,7 +80,7 @@ var mobileSelect2 = new MobileSelect({
 </script>
 ```
 ##### 效果图：
-![Image text](http://p1.bqimg.com/567571/d4e4bac29a9c6e87.gif)
+![image](https://github.com/JveGuo/jveguo.github.io/blob/master/img/1.png)
 
 
 #### ③json格式-联动
