@@ -15,6 +15,8 @@
 		this.jsonType =  false;
 		this.cascadeJsonData = [];
 		this.displayJson = []; 
+		this.curValue = null;
+		this.curIndexArr = [];
 		this.cascade = false;
 		this.startY;
 		this.moveEndY;
@@ -48,16 +50,21 @@
 			_this.cancelBtn = _this.mobileSelect.querySelector('.cancel');
 			_this.grayLayer = _this.mobileSelect.querySelector('.grayLayer');
 			_this.popUp = _this.mobileSelect.querySelector('.content');
-			_this.callback = config.callback ? config.callback : function(){};
-			_this.transitionEnd = config.transitionEnd ? config.transitionEnd : function(){};
-			_this.initPosition = config.position ? config.position : [];
-			_this.titleText = config.title ? config.title : '';
-			_this.connector = config.connector ? config.connector : ' ';
+			_this.callback = config.callback || function(){};
+			_this.transitionEnd = config.transitionEnd || function(){};
+			_this.onShow = config.onShow || function(){};
+			_this.onHide = config.onHide || function(){};
+			_this.initPosition = config.position || [];
+			_this.titleText = config.title || '';
+			_this.connector = config.connector || ' ';
+			_this.triggerDisplayData = !(typeof(config.triggerDisplayData)=='undefined') ? config.triggerDisplayData : true;
 			_this.trigger.style.cursor='pointer';
 			_this.setStyle(config);
 			_this.setTitle(_this.titleText);
 			_this.checkIsPC();
 			_this.checkCascade();
+			_this.addListenerAll();
+
 			if (_this.cascade) {
 				_this.initCascade();
 			}
@@ -70,28 +77,32 @@
 			}
 
 			_this.setCurDistance(_this.initPosition);
-			_this.addListenerAll();
+
 
 			//按钮监听
 			_this.cancelBtn.addEventListener('click',function(){
-			_this.mobileSelect.classList.remove('mobileSelect-show');
+				_this.hide();
 		    });
 
 		    _this.ensureBtn.addEventListener('click',function(){
-				_this.mobileSelect.classList.remove('mobileSelect-show');
+				_this.hide();
 				var tempValue ='';
 		    	for(var i=0; i<_this.wheel.length; i++){
 		    		i==_this.wheel.length-1 ? tempValue += _this.getInnerHtml(i) : tempValue += _this.getInnerHtml(i) + _this.connector;
 		    	}
-		    	_this.trigger.innerHTML = tempValue;
-		    	_this.callback(_this.getIndexArr(),_this.getValue());
+		    	if(_this.triggerDisplayData){
+		    		_this.trigger.innerHTML = tempValue;
+		    	}
+		    	_this.curIndexArr = _this.getIndexArr();
+		    	_this.curValue = _this.getCurValue();
+		    	_this.callback(_this.curIndexArr, _this.curValue);
 		    });
 
 		    _this.trigger.addEventListener('click',function(){
-		    	_this.mobileSelect.classList.add('mobileSelect-show');
+		    	_this.show();
 		    });
 		    _this.grayLayer.addEventListener('click',function(){
-		    	_this.mobileSelect.classList.remove('mobileSelect-show');
+				_this.hide();
 		    });
 		    _this.popUp.addEventListener('click',function(){
 		    	event.stopPropagation(); 
@@ -136,23 +147,33 @@
 
 		checkIsPC: function(){
 			var _this = this;
-		    var sUserAgent = navigator.userAgent.toLowerCase();
-		    var bIsIpad = sUserAgent.match(/ipad/i) == "ipad";
-		    var bIsIphoneOs = sUserAgent.match(/iphone os/i) == "iphone os";
-		    var bIsMidp = sUserAgent.match(/midp/i) == "midp";
-		    var bIsUc7 = sUserAgent.match(/rv:1.2.3.4/i) == "rv:1.2.3.4";
-		    var bIsUc = sUserAgent.match(/ucweb/i) == "ucweb";
-		    var bIsAndroid = sUserAgent.match(/android/i) == "android";
-		    var bIsCE = sUserAgent.match(/windows ce/i) == "windows ce";
-		    var bIsWM = sUserAgent.match(/windows mobile/i) == "windows mobile";
-		    if ((bIsIphoneOs || bIsMidp || bIsUc7 || bIsUc || bIsAndroid || bIsCE || bIsWM)) {
-		        _this.isPC = false;
-		    }
+			var sUserAgent = navigator.userAgent.toLowerCase();
+			var bIsIpad = sUserAgent.match(/ipad/i) == "ipad";
+			var bIsIphoneOs = sUserAgent.match(/iphone os/i) == "iphone os";
+			var bIsMidp = sUserAgent.match(/midp/i) == "midp";
+			var bIsUc7 = sUserAgent.match(/rv:1.2.3.4/i) == "rv:1.2.3.4";
+			var bIsUc = sUserAgent.match(/ucweb/i) == "ucweb";
+			var bIsAndroid = sUserAgent.match(/android/i) == "android";
+			var bIsCE = sUserAgent.match(/windows ce/i) == "windows ce";
+			var bIsWM = sUserAgent.match(/windows mobile/i) == "windows mobile";
+			if ((bIsIpad || bIsIphoneOs || bIsMidp || bIsUc7 || bIsUc || bIsAndroid || bIsCE || bIsWM)) {
+			    _this.isPC = false;
+			}
 		},
 
-		show: function(){
-		    this.mobileSelect.classList.add('mobileSelect-show');	
-		},
+ 		show: function(){
+			this.mobileSelect.classList.add('mobileSelect-show');	
+			if (typeof this.onShow === 'function') {
+				this.onShow(this);
+			}
+  		},
+
+	    hide: function() {
+			this.mobileSelect.classList.remove('mobileSelect-show');
+			if (typeof this.onHide === 'function') {
+				this.onHide(this);
+			}
+	    },
 
 		renderWheels: function(wheelsData, cancelBtnText, ensureBtnText){
 			var _this = this;
@@ -345,10 +366,10 @@
 			//console.log(_this.displayJson);
 			_this.reRenderWheels();
 			_this.fixRowStyle();
-			_this.setCurDistance(_this.resetPostion(index, posIndexArr));
+			_this.setCurDistance(_this.resetPosition(index, posIndexArr));
 		},
 
-		resetPostion: function(index, posIndexArr){
+		resetPosition: function(index, posIndexArr){
 			var _this = this;
 			var tempPosArr = posIndexArr;
 			var tempCount;
@@ -469,7 +490,7 @@
 	    	return temp;
 	    },
 
-	    getValue: function(){
+	    getCurValue: function(){
 	    	var _this = this;
 	    	var temp = [];
 	    	var positionArr = _this.getIndexArr();
@@ -488,6 +509,10 @@
 		    	}
 	    	}
 	    	return temp;
+	    },
+
+	    getValue: function(){
+	    	return this.curValue;
 	    },
 
 	    calcDistance: function(index){
@@ -513,9 +538,13 @@
 	        theSlider.style.transform = 'translate3d(0,' + distance + 'px, 0)';
 	    },
 
-	    locatePostion: function(index, posIndex){
-	    	this.curDistance[index] = this.calcDistance(posIndex);
-	    	this.movePosition(this.slider[index],this.curDistance[index]);
+	    locatePosition: function(index, posIndex){
+	    	var _this = this;
+  	    	this.curDistance[index] = this.calcDistance(posIndex);
+  	    	this.movePosition(this.slider[index],this.curDistance[index]);
+	        if(_this.cascade){
+		    	_this.checkRange(index, _this.getIndexArr());
+			}
 	    },
 
 	    updateCurDistance: function(theSlider, index){
@@ -568,13 +597,11 @@
 			        }
 
 
-			        _this.transitionEnd(_this.getIndexArr(),_this.getValue());
+			        _this.transitionEnd(_this.getIndexArr(),_this.getCurValue());
 
-			        if(_this.cascade){
-				        var tempPosArr = _this.getIndexArr();
-				        tempPosArr[index] = _this.getIndex(_this.curDistance[index]);
-			        	_this.checkRange(index, tempPosArr);
-			        }
+ 			        if(_this.cascade){
+				        _this.checkRange(index, _this.getIndexArr());
+				    }
 
 	    			break;
 
@@ -628,12 +655,10 @@
 			        }
 
 			        _this.clickStatus = false;
-			        _this.transitionEnd(_this.getIndexArr(),_this.getValue());
-			        if(_this.cascade){
-				        var tempPosArr = _this.getIndexArr();
-				        tempPosArr[index] = _this.getIndex(_this.curDistance[index]);
-			        	_this.checkRange(index, tempPosArr);
-			        }
+			        _this.transitionEnd(_this.getIndexArr(),_this.getCurValue());
+ 			        if(_this.cascade){
+				        _this.checkRange(index, _this.getIndexArr());
+			    	}
 	    			break;
 
 	    		case "mousemove":
@@ -661,6 +686,7 @@
 		        _this.curDistance[sliderIndex] = (2-index)*_this.liHeight;
 		        _this.movePosition(theLi.parentNode, _this.curDistance[sliderIndex]);
 	        }
+	        _this.transitionEnd(_this.getIndexArr(),_this.getCurValue());
 	    }
 
 	};
