@@ -1,5 +1,7 @@
 # mobile_Select
 - 移动端选择插件
+##### 效果图：
+![image](https://github.com/JveGuo/jveguo.github.io/blob/master/img/1.png)
 
 - 原生js移动端选择控件，不依赖任何库
 - 可传入普通数组或者json数组
@@ -79,9 +81,6 @@ var mobileSelect2 = new MobileSelect({
 });
 </script>
 ```
-##### 效果图：
-![image](https://github.com/JveGuo/jveguo.github.io/blob/master/img/1.png)
-
 
 #### ③json格式-联动
 ```html
